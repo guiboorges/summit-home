@@ -64,7 +64,7 @@ npm test        # simulation tests
 npm run build   # static site in dist/
 ```
 
-React 19, TypeScript, and Vite, with no backend. The simulation is in `src/sim/model.ts` (pure functions) and `src/sim/useHome.ts` (state and the tick).
+React 19, TypeScript, and Vite, with no backend. The simulation is in `src/sim/`: `model.ts` holds the house and the pure functions, `rooms.ts`, `energy.ts`, and `security.ts` hold the data for each view, and `useHome.ts` holds the state and the tick. The views are in `src/components/`.
 
 ## License
 
