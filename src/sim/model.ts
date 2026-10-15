@@ -1,8 +1,9 @@
 // The simulated lake house. Everything here is pure: given the device list and the clock,
 // it returns what the dashboard shows. The React hook in useHome.ts owns the state and the tick.
 
-export type Room = 'Living room' | 'Kitchen' | 'Office' | 'Bedroom' | 'Bathroom' | 'Deck' | 'Entrance' | 'Whole house'
-export type Kind = 'light' | 'thermostat' | 'purifier' | 'appliance' | 'computer' | 'speaker' | 'camera' | 'lock' | 'heater' | 'sensor'
+/** A room name. The seven below come with the house; people can add more. */
+export type Room = string
+export type Kind = 'light' | 'thermostat' | 'purifier' | 'appliance' | 'computer' | 'speaker' | 'camera' | 'lock' | 'heater' | 'sensor' | 'siren'
 
 export interface Device {
   id: string
@@ -29,6 +30,9 @@ export interface Home {
   indoor: number
   battery: number // state of charge, 0–100
   jitter: number // small live wobble on the power reading, kW
+  armed: boolean // alarm system
+  automations: Record<string, boolean>
+  rooms: Room[]
 }
 
 export const BATTERY_KWH = 13.5
@@ -58,6 +62,8 @@ export const initialDevices: Device[] = [
   { id: 'deck-speaker', name: 'Deck speaker', room: 'Deck', kind: 'speaker', on: false, watts: 30, online: true },
   { id: 'front-door', name: 'Front door', room: 'Entrance', kind: 'lock', on: true, watts: 0, online: true },
   { id: 'camera', name: 'Door camera', room: 'Entrance', kind: 'camera', on: true, watts: 8, online: true },
+  { id: 'deck-door', name: 'Deck door', room: 'Deck', kind: 'lock', on: true, watts: 0, online: true },
+  { id: 'siren', name: 'Siren', room: 'Entrance', kind: 'siren', on: false, watts: 0, online: true },
   { id: 'garden-sensor', name: 'Garden sensor', room: 'Deck', kind: 'sensor', on: true, watts: 1, online: false },
   { id: 'boathouse-plug', name: 'Boathouse plug', room: 'Deck', kind: 'appliance', on: false, watts: 0, online: false },
 ]
@@ -160,10 +166,10 @@ export function today(home: Home, now: Date): Day {
 
 /** Energy per room today: history split by each room's share, plus what is on right now. */
 export function roomsToday(home: Home, now: Date): { room: Room; kwh: number }[] {
-  const share: Partial<Record<Room, number>> = { 'Living room': 0.3, Kitchen: 0.24, Office: 0.17, Bedroom: 0.12, Bathroom: 0.08, Deck: 0.05, Entrance: 0.04 }
+  const share: Record<Room, number> = { 'Living room': 0.3, Kitchen: 0.24, Office: 0.17, Bedroom: 0.12, Bathroom: 0.08, Deck: 0.05, Entrance: 0.04 }
   const day = today(home, now)
   const liveFrac = hourOf(now) - Math.floor(hourOf(now))
-  return ROOMS.map(room => {
+  return home.rooms.map(room => {
     const live = home.devices.filter(d => d.room === room && d.on && d.online).reduce((s, d) => s + d.watts, 0) / 1000
     return { room, kwh: +(day.usedKwh * 0.7 * (share[room] ?? 0) + live * liveFrac).toFixed(1) }
   }).sort((a, b) => b.kwh - a.kwh)
@@ -215,4 +221,7 @@ export function fmtDuration(hours: number): string {
   return h ? `${h} h ${m} min` : `${m} min`
 }
 
-export const initialHome = (): Home => ({ devices: initialDevices, indoor: 21.9, battery: 78, jitter: 0 })
+export const initialHome = (): Home => ({
+  devices: initialDevices, indoor: 21.9, battery: 78, jitter: 0, armed: true,
+  automations: { wake: true, sunset: true, night: false, left: true }, rooms: [...ROOMS],
+})

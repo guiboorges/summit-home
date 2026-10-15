@@ -22,7 +22,7 @@ export function Overview({ api, onOpenDevices, onOpenTab }: { api: HomeApi; onOp
   const usual = USE_PROFILE[Math.floor(h)]
   const rooms = roomsToday(home, now).slice(0, 4)
   const maxRoom = Math.max(...rooms.map(r => r.kwh), 0.1)
-  const active = home.devices.filter(d => d.on && d.online && d.kind !== 'lock' && d.kind !== 'sensor' && d.kind !== 'camera').sort((a, b) => b.watts - a.watts)
+  const active = home.devices.filter(d => d.on && d.online && d.kind !== 'lock' && d.kind !== 'sensor' && d.kind !== 'camera' && d.kind !== 'siren').sort((a, b) => b.watts - a.watts)
   const water = waterLitres(now)
   const usualWater = Math.max(1, usualWaterLitres(now))
   const heatKwh = 0.11 * h + (heating(home) ? 0.2 : 0)

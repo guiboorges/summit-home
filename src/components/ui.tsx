@@ -153,3 +153,85 @@ export function SidebarStat({ label, value, meta, metaTone }: { label: string; v
     </div>
   )
 }
+
+export function Slider({ label, value, display, min = 0, max = 100, step = 1, tone = 'orange', onChange }: {
+  label: string
+  value: number
+  display: string
+  min?: number
+  max?: number
+  step?: number
+  tone?: 'orange' | 'teal'
+  onChange: (v: number) => void
+}) {
+  const pct = ((value - min) / (max - min)) * 100
+  return (
+    <label className="slider" data-tone={tone}>
+      <span className="slider-top">
+        <span className="t-label">{label}</span>
+        <span className="t-label c-secondary tnum">{display}</span>
+      </span>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={e => onChange(Number(e.target.value))} style={{ '--pct': `${pct}%` } as React.CSSProperties} />
+    </label>
+  )
+}
+
+export function Segmented<T extends string>({ options, value, onChange, label }: { options: { id: T; label: string }[]; value: T; onChange: (v: T) => void; label: string }) {
+  return (
+    <div className="tabs" role="radiogroup" aria-label={label}>
+      {options.map(o => (
+        <button key={o.id} type="button" role="radio" aria-checked={value === o.id} className="tab" aria-current={value === o.id ? 'true' : undefined} onClick={() => onChange(o.id)}>{o.label}</button>
+      ))}
+    </div>
+  )
+}
+
+export function StatusRow({ icon, name, meta, tone, status }: { icon: LucideIcon; name: string; meta: string; tone: Tone; status: string }) {
+  return (
+    <div className="device-row">
+      <IconTile icon={icon} tone="device" />
+      <div className="device-text">
+        <span className="t-body-strong">{name}</span>
+        <span className="t-caption c-secondary">{meta}</span>
+      </div>
+      <Badge tone={tone}>{status}</Badge>
+    </div>
+  )
+}
+
+export function BarChart({ bars, height = 200, max, label, unit }: {
+  bars: { label: string; used: number; solar: number; current?: boolean; future?: boolean; showLabel?: boolean }[]
+  height?: number
+  max?: number
+  label: string
+  unit: string
+}) {
+  const top = max ?? niceMax(Math.max(...bars.map(b => Math.max(b.used, b.solar)), 1))
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map(f => +(top * f).toFixed(top < 4 ? 1 : 0))
+  const dense = bars.length > 12
+  return (
+    <figure className="bars" role="img" aria-label={label}>
+      <div className="bars-plot" style={{ height }}>
+        <div className="bars-grid" aria-hidden="true">
+          {ticks.slice().reverse().map(t => <span key={t} className="t-caption"><i>{t}</i></span>)}
+        </div>
+        <div className="bars-groups" data-dense={dense || undefined}>
+          {bars.map((b, i) => (
+            <div key={i} className="bars-group" data-current={b.current || undefined} data-future={b.future || undefined} title={`${b.label}: ${b.used.toFixed(1)} ${unit} used, ${b.solar.toFixed(1)} ${unit} solar`}>
+              <span className="bar" data-tone="orange" style={{ height: `${(b.used / top) * 100}%` }} />
+              <span className="bar" data-tone="teal" style={{ height: `${(b.solar / top) * 100}%` }} />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="bars-labels t-caption" aria-hidden="true">
+        {bars.map((b, i) => <span key={i} data-current={b.current || undefined}>{b.showLabel !== false ? b.label : ''}</span>)}
+      </div>
+    </figure>
+  )
+}
+
+function niceMax(v: number) {
+  const step = v <= 4 ? 1 : v <= 20 ? 5 : v <= 100 ? 25 : v <= 400 ? 100 : 250
+  return Math.ceil(v / step) * step
+}

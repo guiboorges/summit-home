@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { ROOMS, type Device, type Kind, type Room } from '../sim/model'
+import type { Device, Kind, Room } from '../sim/model'
 import { DeviceRow } from './devices'
 import { Button, IconButton } from './ui'
 
@@ -28,7 +28,7 @@ const KINDS: { kind: Kind; label: string }[] = [
   { kind: 'heater', label: 'Heater' }, { kind: 'purifier', label: 'Air purifier' }, { kind: 'camera', label: 'Camera' },
 ]
 
-export function AddDeviceDialog({ open, onClose, onAdd }: { open: boolean; onClose: () => void; onAdd: (name: string, room: Room, kind: Kind) => void }) {
+export function AddDeviceDialog({ open, onClose, onAdd, rooms }: { open: boolean; onClose: () => void; onAdd: (name: string, room: Room, kind: Kind) => void; rooms: Room[] }) {
   const [name, setName] = useState('')
   const [room, setRoom] = useState<Room>('Living room')
   const [kind, setKind] = useState<Kind>('light')
@@ -51,7 +51,7 @@ export function AddDeviceDialog({ open, onClose, onAdd }: { open: boolean; onClo
         <label className="field">
           <span className="t-label">Room</span>
           <select value={room} onChange={e => setRoom(e.target.value as Room)}>
-            {ROOMS.map(r => <option key={r}>{r}</option>)}
+            {rooms.map(r => <option key={r}>{r}</option>)}
           </select>
         </label>
         <label className="field">
@@ -64,6 +64,35 @@ export function AddDeviceDialog({ open, onClose, onAdd }: { open: boolean; onClo
         <div className="form-actions">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button type="submit">Add device</Button>
+        </div>
+      </form>
+    </Dialog>
+  )
+}
+
+export function AddRoomDialog({ open, onClose, onAdd, rooms }: { open: boolean; onClose: () => void; onAdd: (name: string) => void; rooms: Room[] }) {
+  const [name, setName] = useState('')
+  const taken = rooms.some(r => r.toLowerCase() === name.trim().toLowerCase())
+  return (
+    <Dialog open={open} onClose={onClose} title="Add a room">
+      <form
+        className="form"
+        onSubmit={e => {
+          e.preventDefault()
+          if (!name.trim() || taken) return
+          onAdd(name.trim())
+          setName('')
+          onClose()
+        }}
+      >
+        <label className="field">
+          <span className="t-label">Name</span>
+          <input required value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Guest room" aria-invalid={taken} />
+        </label>
+        {taken && <p className="t-caption" data-tone="warning">There is already a room with that name.</p>}
+        <div className="form-actions">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button type="submit">Add room</Button>
         </div>
       </form>
     </Dialog>

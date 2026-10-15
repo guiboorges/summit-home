@@ -12,17 +12,35 @@ A working smart home dashboard for a lake house, built with the **Summit** desig
 |---|---|
 | ![Overview in light mode](docs/screenshots/overview-light.png) | ![Overview on a 390 px phone screen](docs/screenshots/mobile.png) |
 
+| Rooms | Energy | Security |
+|---|---|---|
+| ![Rooms: room cards, the selected room's sliders and devices, and automations](docs/screenshots/rooms.png) | ![Energy: KPIs, daily consumption and solar, live energy flow, tariff](docs/screenshots/energy.png) | ![Security: live camera, cameras, sensors, alarm, locks, and activity](docs/screenshots/security.png) |
+
 ## What works
 
-- **Devices:** switch lights, appliances, the purifier, the speaker, the lock, and the camera. Power now, energy by room, and the active devices list update right away.
-- **Scenes:** Evening, Lake mode, and Away change several devices at once. A scene shows as on while the house matches it.
-- **Energy:** today's consumption and solar curves end in a live point. Solar follows the sun (sunrise 07:30, sunset 18:51), and the solar share is what your roof covered.
-- **Battery:** charges with surplus sun and drains at night, with "full in" or "lasts" estimates.
-- **Climate:** the thermostat heats toward its target and the indoor temperature follows.
-- **Search** (`⌘K`), **notifications** for everything that happens, **add a device**, **all devices**, and a **light/dark switch** (it follows your system by default).
-- Your house is saved in the browser (`localStorage`). The reset button in the sidebar starts it again.
+**Overview**
+- Switch lights, appliances, the purifier, the speaker, the locks, and the camera. Power now, energy by room, and the active devices list update right away.
+- Scenes (Evening, Lake mode, Away) change several devices at once. A scene shows as on while the house matches it.
+- Today's consumption and solar curves end in a live point. Solar follows the sun (sunrise 07:30, sunset 18:51).
+- The battery charges with surplus sun and drains at night; the thermostat heats toward its target.
 
-Only the Overview is built. Rooms, Energy, and Security are being designed in Figma first.
+**Rooms** (`#rooms`)
+- Every room with its temperature, devices on, and energy today. Pick one to see its details.
+- Dim each light, set the heating target, switch devices, see the room's energy by hour, and turn the whole room off.
+- Automations (wake up 07:00, sunset, good night 23:30) run on their own when their time comes. Add your own rooms.
+
+**Energy** (`#energy`)
+- Today, 7 days, 30 days, or the year: energy used, solar produced, self-sufficiency, and grid cost, compared with the previous period.
+- Consumption and solar per hour, day, or month.
+- The live energy flow between the sun, the house, the battery, and the grid: surplus sun fills the battery first, then goes to the grid.
+- Top consumers, the time-of-use price by hour with the current hour marked, and a tip when something heavy runs at peak price.
+
+**Security** (`#security`)
+- A live camera with a running clock, Talk, and Snapshot; pick any of the other three cameras to make it the main view.
+- Arm or disarm the alarm, start Away, and lock or unlock the doors. Motion on the deck happens now and then.
+- Sensors with a word and a color for each state, and today's security activity.
+
+**Everywhere:** search (`⌘K`), notifications for everything that happens, add a device, a light/dark switch (it follows your system by default), and a reset button. Your house is saved in the browser (`localStorage`).
 
 > The home is simulated. No real devices are connected and nothing leaves your browser. The battery and temperature move 20× faster than real time, so changes are visible in a demo; the clock and the charts use your real time.
 

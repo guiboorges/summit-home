@@ -1,7 +1,7 @@
 {
   "name": "summit-home",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "A working smart home dashboard built with the Summit design system, running on a simulated lake house.",
   "scripts": {

@@ -1,13 +1,18 @@
 import { Bell, House, LayoutGrid, Moon, Plus, RotateCcw, Search, Sun } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AddDeviceDialog, DevicesDialog } from './components/dialogs'
+import { AddDeviceDialog, AddRoomDialog, DevicesDialog } from './components/dialogs'
+import { Energy } from './components/Energy'
+import { Rooms } from './components/Rooms'
+import { Security } from './components/Security'
 import { DeviceRow } from './components/devices'
 import { Overview } from './components/Overview'
 import { Badge, Button, Gauge, ICON_STROKE, IconButton, SidebarStat } from './components/ui'
+import { kpis, PERIODS, type Period } from './sim/energy'
 import { hourOf, sceneActive, scenes, today, usualWaterLitres, waterLitres } from './sim/model'
 import { useHome } from './sim/useHome'
 
 const TABS = ['Overview', 'Rooms', 'Energy', 'Security']
+const tabFromHash = () => TABS.find(t => `#${t.toLowerCase()}` === location.hash) ?? 'Overview'
 
 function greeting(h: number) {
   if (h < 5) return 'Good night'
@@ -37,7 +42,9 @@ function initialTheme(): Theme {
 export default function App() {
   const api = useHome()
   const { home, now } = api
-  const [tab, setTab] = useState('Overview')
+  const [tab, setTabState] = useState(tabFromHash)
+  const [period, setPeriod] = useState<Period>('7d')
+  const [roomOpen, setRoomOpen] = useState(false)
   const [theme, setTheme] = useState<Theme>(initialTheme)
   const [query, setQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
@@ -46,6 +53,18 @@ export default function App() {
   const [addOpen, setAddOpen] = useState(false)
   const [allOpen, setAllOpen] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
+
+  const setTab = (t: string) => {
+    setTabState(t)
+    history.replaceState(null, '', t === 'Overview' ? location.pathname + location.search : `#${t.toLowerCase()}`)
+    window.scrollTo({ top: 0 })
+  }
+
+  useEffect(() => {
+    const onHash = () => setTabState(tabFromHash())
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -75,10 +94,18 @@ export default function App() {
   const day = today(home, now)
   const thermostat = home.devices.find(d => d.id === 'thermostat')
   const online = home.devices.filter(d => d.online).length
-  const lock = home.devices.find(d => d.id === 'front-door')
-  const camera = home.devices.find(d => d.id === 'camera')
-  const armed = !!lock?.on && !!camera?.on
   const dateLine = now.toLocaleDateString('en-GB', { weekday: 'long' }) + ', ' + now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) + ' · ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  const doors = home.devices.filter(d => d.kind === 'lock')
+  const locked = doors.every(d => d.on)
+  const armed = home.armed
+  const onCount = home.devices.filter(d => d.on && d.online && !['lock', 'camera', 'sensor', 'siren'].includes(d.kind)).length
+  const k = kpis(home, now, period)
+  const heading = {
+    Overview: [greeting(h), dateLine],
+    Rooms: ['Rooms', `${home.rooms.length} rooms · ${onCount} devices on`],
+    Energy: ['Energy', `${PERIODS.find(p => p.id === period)!.label} · ${k.used.toFixed(period === 'year' ? 0 : 1)} kWh used`],
+    Security: ['Security', `${armed ? 'Armed' : 'Disarmed'} · ${locked ? 'all doors locked' : 'a door is unlocked'}`],
+  }[tab] ?? [greeting(h), dateLine]
 
   return (
     <div className="app">
@@ -105,7 +132,7 @@ export default function App() {
         <hr />
         <SidebarStat label="Devices" value={String(online)} meta={`of ${home.devices.length} online`} />
         <SidebarStat label="Water today" value={`${waterLitres(now)} L`} meta={`Usual by now: ${usualWaterLitres(now)} L`} />
-        <SidebarStat label="Security" value={armed ? 'Armed' : 'Disarmed'} meta={armed ? 'Door locked · camera on' : `${lock?.on ? 'Door locked' : 'Door unlocked'} · camera ${camera?.on ? 'on' : 'off'}`} metaTone={armed ? undefined : 'warning'} />
+        <SidebarStat label="Security" value={armed ? 'Armed' : 'Disarmed'} meta={locked ? `${doors.length} doors locked` : 'A door is unlocked'} metaTone={armed && locked ? undefined : 'warning'} />
         <div className="grow" />
         <div className="user">
           <span className="avatar" aria-hidden="true">GB</span>
@@ -121,8 +148,8 @@ export default function App() {
       <main className="main">
         <header className="topbar">
           <div className="title">
-            <h1 className="t-h2">{greeting(h)}</h1>
-            <p className="t-label c-secondary">{dateLine}</p>
+            <h1 className="t-h2">{heading[0]}</h1>
+            <p className="t-label c-secondary">{heading[1]}</p>
           </div>
           <nav className="tabs" aria-label="Sections">
             {TABS.map(t => (
@@ -177,18 +204,14 @@ export default function App() {
           </div>
         </header>
 
-        {tab === 'Overview' ? (
-          <Overview api={api} onOpenDevices={() => setAllOpen(true)} onOpenTab={setTab} />
-        ) : (
-          <section className="card placeholder">
-            <h2 className="t-h3">{tab}</h2>
-            <p className="t-body c-secondary">This view is being designed in Figma first. The Overview is live.</p>
-            <Button variant="ghost" onClick={() => setTab('Overview')}>Back to Overview</Button>
-          </section>
-        )}
+        {tab === 'Rooms' ? <Rooms api={api} onAddRoom={() => setRoomOpen(true)} />
+          : tab === 'Energy' ? <Energy api={api} period={period} setPeriod={setPeriod} />
+          : tab === 'Security' ? <Security api={api} />
+          : <Overview api={api} onOpenDevices={() => setAllOpen(true)} onOpenTab={setTab} />}
       </main>
 
-      <AddDeviceDialog open={addOpen} onClose={() => setAddOpen(false)} onAdd={api.addDevice} />
+      <AddDeviceDialog open={addOpen} onClose={() => setAddOpen(false)} onAdd={api.addDevice} rooms={home.rooms} />
+      <AddRoomDialog open={roomOpen} onClose={() => setRoomOpen(false)} onAdd={api.addRoom} rooms={home.rooms} />
       <DevicesDialog open={allOpen} onClose={() => setAllOpen(false)} devices={home.devices} onToggle={api.toggle} />
     </div>
   )
